@@ -36,7 +36,7 @@ public class PrjSelectActivity extends AppCompatActivity{
         initView();
 
         //TODO---测试代码
-        MarkerActivity.start(this);
+//        MarkerActivity.start(this);
 //        startActivity(new Intent(this, DemoActivity.class));
     }
 

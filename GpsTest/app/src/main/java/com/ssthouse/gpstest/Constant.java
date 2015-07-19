@@ -16,4 +16,5 @@ public class Constant {
 
     //Extra的key
     public static final String EXTRA_KEY_PRJ_ITEM = "prjItem";
+    public static final String EXTRA_KEY_MARKER_ITEM = "markerItem";
 }

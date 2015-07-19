@@ -14,20 +14,20 @@ import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.MapView;
-import com.baidu.mapapi.model.LatLng;
 import com.ssthouse.gpstest.Constant;
 import com.ssthouse.gpstest.R;
+import com.ssthouse.gpstest.model.MarkerItem;
 import com.ssthouse.gpstest.model.PrjItem;
 import com.ssthouse.gpstest.util.ToastHelper;
 import com.ssthouse.gpstest.util.gps.LocateHelper;
-import com.ssthouse.gpstest.util.gps.MarkHelper;
-import com.ssthouse.gpstest.util.gps.NavigateHelper;
 
 /**
  * 开启时会接收到一个PrjItem---intent中
  */
-public class PrjEditActivity extends AppCompatActivity implements View.OnClickListener{
+public class PrjEditActivity extends AppCompatActivity{
     private static final String TAG = "PrjEditActivity";
+
+    private static final int REQUEST_CODE_MARKER_ACTIVITY = 1000;
 
     /**
      * 接收到的数据
@@ -35,7 +35,6 @@ public class PrjEditActivity extends AppCompatActivity implements View.OnClickLi
     private PrjItem prjItem;
 
     private BaiduMap baiduMap;
-
     private MapView mapView;
 
     private LocationClient locationClient;
@@ -50,10 +49,11 @@ public class PrjEditActivity extends AppCompatActivity implements View.OnClickLi
     /**
      * 用于更加方便的开启Activity
      * 后面几个参数可以用来传递-----放入intent 的数据
+     *
      * @param context
      */
-    public static void start(Context context, PrjItem prjItem){
-        if(context == null || prjItem == null){
+    public static void start(Context context, PrjItem prjItem) {
+        if (context == null || prjItem == null) {
             return;
         }
         Intent intent = new Intent(context, PrjEditActivity.class);
@@ -66,17 +66,23 @@ public class PrjEditActivity extends AppCompatActivity implements View.OnClickLi
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prj_edit);
 
+        //获取intent中数据
         prjItem = (PrjItem) getIntent().getSerializableExtra(Constant.EXTRA_KEY_PRJ_ITEM);
+
+        //初始化数据
+        locationClient = new LocationClient(this);
+        LocateHelper.initLocationClient(locationClient);
+        locationClient.registerLocationListener(locationListener);
+        locationClient.start();
+
         initView();
 
         //TODO-------------------------测试代码
+//        MarkerHelper.mark(baiduMap, new LatLng(30.5, 114.4));
 
-        MarkHelper.mark(baiduMap, new LatLng(30.5, 114.4));
 
-        LocateHelper.addListener(this, locationListener);
-        LocateHelper.start(this);
 
-        NavigateHelper.initNavi(this);
+//        NavigateHelper.initNavi(this);
 
 //        PictureHelper.showPictureInAlbum(this, "/storage/sdcard0/DCIM/Camera/IMG_20150712_104954.jpg");
 //        PictureHelper.showPictureInAlbum(this, "/storage/sdcard0/picture/a21.jpg");
@@ -87,57 +93,62 @@ public class PrjEditActivity extends AppCompatActivity implements View.OnClickLi
     private void initView() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.id_tb);
         setSupportActionBar(toolbar);
-        android.support.v7.app.ActionBar actionBar = getSupportActionBar();
-        if(actionBar != null){
-            getSupportActionBar().setLogo(R.mipmap.ic_launcher);
-            actionBar.setDisplayShowTitleEnabled(false);
-            actionBar.setBackgroundDrawable(getResources().getDrawable(R.drawable.action_bar_background));
-            //设置Title
-            toolbar.setTitle(prjItem.getPrjName());
-            toolbar.setTitleTextColor(getResources().getColor(R.color.white));
-        }
+        toolbar.setLogo(R.mipmap.ic_launcher);
+        toolbar.setBackgroundDrawable(getResources().getDrawable(R.drawable.action_bar_background));
+        //设置Title
+        toolbar.setTitle(prjItem.getPrjName());
+        toolbar.setTitleTextColor(getResources().getColor(R.color.white));
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 
-        mapView = (MapView)findViewById(R.id.id_baidu_map);
+        mapView = (MapView) findViewById(R.id.id_baidu_map);
         baiduMap = mapView.getMap();
         initMap(baiduMap);
 
-        //四个按钮的监听事件
-        findViewById(R.id.id_btn_route).setOnClickListener(this);
-        findViewById(R.id.id_btn_guide).setOnClickListener(this);
-        findViewById(R.id.id_btn_mark).setOnClickListener(this);
-        findViewById(R.id.id_btn_take_photo).setOnClickListener(this);
+        //路线
+        findViewById(R.id.id_btn_route).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                RoutePlanActivity.start(PrjEditActivity.this);
+                ToastHelper.show(PrjEditActivity.this, "路线");
+            }
+        });
+
+        //导航
+        findViewById(R.id.id_btn_guide).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //TODO
+            }
+        });
+
+        //选址
+        findViewById(R.id.id_btn_mark).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //先保存进数据库---然后传递
+                MarkerItem markerItem = new MarkerItem(prjItem);
+                markerItem.save();
+                MarkerActivity.start(PrjEditActivity.this, markerItem, REQUEST_CODE_MARKER_ACTIVITY);
+                ToastHelper.show(PrjEditActivity.this, "标记");
+            }
+        });
+
+        //拍照---拍照前要选中一个Marker
+        findViewById(R.id.id_btn_take_photo).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //TODO
+            }
+        });
     }
 
     /**
      * 初始化地图
      */
-    private void initMap(BaiduMap baiduMap){
+    private void initMap(BaiduMap baiduMap) {
         baiduMap.setMyLocationEnabled(true);
     }
-
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()){
-            case R.id.id_btn_route:
-                RoutePlanActivity.start(this);
-                ToastHelper.show(this, "路线");
-                break;
-            case R.id.id_btn_guide:
-
-                ToastHelper.show(this, "导航");
-                break;
-            case R.id.id_btn_mark:
-
-                ToastHelper.show(this, "标记");
-                break;
-            case R.id.id_btn_take_photo:
-
-                ToastHelper.show(this, "拍照");
-                break;
-        }
-    }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -151,12 +162,22 @@ public class PrjEditActivity extends AppCompatActivity implements View.OnClickLi
             case R.id.id_action_setting:
 
                 break;
+            case android.R.id.home:
+                finish();
+                break;
         }
         return super.onOptionsItemSelected(item);
     }
 
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
+        //TODO----处理各种回调时间
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    //生命周期***********************************************************
     @Override
     protected void onPause() {
         super.onPause();

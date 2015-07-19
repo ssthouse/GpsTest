@@ -10,6 +10,26 @@ import java.util.List;
  */
 public class DBHelper {
 
+    /**
+     * 从数据库中获取MarkerItem
+     *
+     * @param markerItem
+     * @return
+     */
+    public static MarkerItem getMarkerItemInDB(MarkerItem markerItem) {
+        String prjName = markerItem.getPrjName();
+        double latitude = markerItem.getLatitude();
+        double longitude = markerItem.getLongitude();
+        MarkerItem markerItemInDB = new Select()
+                .from(MarkerItem.class)
+                .where("prjName ="
+                        + " '" + prjName + "' and "
+                        + "latitude ="
+                        + " '" + latitude + "' and "
+                        + "longitude ="
+                        + " '" + longitude + "'").executeSingle();
+        return markerItemInDB;
+    }
 
     /**
      * 判断工程是否在---数据库---中已存在

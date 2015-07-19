@@ -7,6 +7,7 @@ import com.activeandroid.query.Select;
 import com.baidu.mapapi.model.LatLng;
 import com.ssthouse.gpstest.Constant;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -14,7 +15,7 @@ import java.util.List;
  * Created by ssthouse on 2015/7/17.
  */
 @Table(name = Constant.TABLE_MARKER_ITEM)
-public class MarkerItem extends Model {
+public class MarkerItem extends Model implements Serializable{
 
     @Column(name = "prjName")
     private String prjName;
@@ -36,6 +37,17 @@ public class MarkerItem extends Model {
         this.prjName = prjName;
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    /**
+     * 使用prjItem的构造方法
+     * @param prjItem
+     */
+    public MarkerItem(PrjItem prjItem){
+        super();
+        this.prjName = prjItem.getPrjName();
+        this.latitude = 0;
+        this.longitude = 0;
     }
 
     /**

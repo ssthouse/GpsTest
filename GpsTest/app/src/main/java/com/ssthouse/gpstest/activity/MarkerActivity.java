@@ -1,10 +1,12 @@
 package com.ssthouse.gpstest.activity;
 
-import android.content.Context;
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -15,9 +17,7 @@ import android.widget.ImageView;
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
-import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.map.BaiduMap;
-import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapStatus;
 import com.baidu.mapapi.map.MapStatusUpdate;
 import com.baidu.mapapi.map.MapStatusUpdateFactory;
@@ -26,48 +26,44 @@ import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.map.UiSettings;
 import com.baidu.mapapi.model.LatLng;
+import com.ssthouse.gpstest.Constant;
 import com.ssthouse.gpstest.R;
+import com.ssthouse.gpstest.model.DBHelper;
+import com.ssthouse.gpstest.model.MarkerItem;
+import com.ssthouse.gpstest.util.AnimHelper;
 import com.ssthouse.gpstest.util.LogHelper;
+import com.ssthouse.gpstest.util.gps.LocateHelper;
+import com.ssthouse.gpstest.util.gps.MarkerHelper;
 
 /**
- * 用于选址的Activity
+ * 用于选址的Activity---开启当前的Acitcvity需要传递一个MarkerItem
  * Created by ssthouse on 2015/7/17.
  */
 public class MarkerActivity extends AppCompatActivity{
-
     private static final String TAG = "MarkerActivity";
 
+    //开启本Activity需要的数据
+    private MarkerItem markerItem;
+
+    //地图View
+    private MapView mMapView;
+    //地图控制器
+    private BaiduMap mBaiduMap;
     // 定位相关
     private LocationClient mLocClient;
-
-    //ui设置
-    private UiSettings uiSettings;
-
-    //经纬度的输入框
-    private EditText etLatitude, etLongitude;
-
-    //确定按钮
-    private Button btnSubmit;
-
-
-    //视图中间的marker
-    private ImageView ivMark;
-
-    //控制状态的button
-    private ImageButton imageButton;
-
-
     //跟随----普通---罗盘---三种定位方式
     private MyLocationConfiguration.LocationMode mCurrentMode =
             MyLocationConfiguration.LocationMode.NORMAL;
 
-    private MapView mMapView;
-
-    private BaiduMap mBaiduMap;
+    //经纬度的输入框
+    private EditText etLatitude, etLongitude;
+    //视图中间的marker
+    private ImageView ivMark;
+    //控制状态的button
+    private ImageButton imageButton;
 
     //用于Activity开启时的第一次定位
     private boolean isFistIn = true;
-
     //用于判断是否已经定位
     private boolean isLocated = true;
 
@@ -88,20 +84,28 @@ public class MarkerActivity extends AppCompatActivity{
         }
     };
 
+    public static void start(Activity activity, MarkerItem markerItem, int requestCode) {
+        Intent intent = new Intent(activity, MarkerActivity.class);
+        intent.putExtra(Constant.EXTRA_KEY_MARKER_ITEM, markerItem);
+        //TODO---开启这个标记Activity需要回调---1标记成功则添加数据刷新界面---2失败就不干什么
+        activity.startActivityForResult(intent, requestCode);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mark);
 
+        //获取数据
+        MarkerItem wrongItem = (MarkerItem) getIntent()
+                .getSerializableExtra(Constant.EXTRA_KEY_MARKER_ITEM);
+        markerItem = DBHelper.getMarkerItemInDB(wrongItem);
+
         // 定位初始化
         mLocClient = new LocationClient(this);
         mLocClient.registerLocationListener(myListener);
         //初始化定位---设置
-        LocationClientOption option = new LocationClientOption();
-        option.setOpenGps(true);// 打开gps
-        option.setCoorType("bd09ll"); // 设置坐标类型
-        option.setScanSpan(1000);
-        mLocClient.setLocOption(option);
+        LocateHelper.initLocationClient(mLocClient);
         //开启定位
         mLocClient.start();
 
@@ -111,15 +115,21 @@ public class MarkerActivity extends AppCompatActivity{
 
     private void initView() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.id_tb);
+        //title
         toolbar.setTitle("选址");
         toolbar.setTitleTextColor(getResources().getColor(R.color.white));
+        //logo
         toolbar.setLogo(R.mipmap.ic_launcher);
         toolbar.setBackgroundDrawable(getResources().getDrawable(R.drawable.action_bar_background));
+        //back
         setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        toolbar.setTitle("hahah");
 
         mMapView = (MapView) findViewById(R.id.id_map_view);
         mBaiduMap = mMapView.getMap();
-        uiSettings = mBaiduMap.getUiSettings();
+        UiSettings uiSettings = mBaiduMap.getUiSettings();
         //开启指南针
         uiSettings.setCompassEnabled(true);
         // 开启定位图层
@@ -136,6 +146,12 @@ public class MarkerActivity extends AppCompatActivity{
                     LogHelper.Log(TAG, "我摸到了---地图");
                 }
 
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    AnimHelper.rotateBigAnim(MarkerActivity.this, ivMark);
+                }
+                if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                    AnimHelper.rotateSmallAnim(MarkerActivity.this, ivMark);
+                }
             }
         });
 
@@ -143,7 +159,6 @@ public class MarkerActivity extends AppCompatActivity{
         mBaiduMap.setOnMapStatusChangeListener(new BaiduMap.OnMapStatusChangeListener() {
             @Override
             public void onMapStatusChangeStart(MapStatus mapStatus) {
-                //TODO---markIcon的放大动画
             }
 
             @Override
@@ -152,25 +167,10 @@ public class MarkerActivity extends AppCompatActivity{
 
             @Override
             public void onMapStatusChangeFinish(MapStatus mapStatus) {
-                //TODO---markIcon的缩小动画
-
                 //更新输入框经纬度数据
                 LatLng latlng = mBaiduMap.getMapStatus().target;
                 etLatitude.setText(latlng.latitude + "");
                 etLongitude.setText(latlng.longitude + "");
-            }
-        });
-
-        //TODO---测试用
-        mBaiduMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
-            @Override
-            public void onMapClick(LatLng latLng) {
-                LogHelper.Log(TAG, latLng.latitude + " : " + latLng.longitude);
-            }
-
-            @Override
-            public boolean onMapPoiClick(MapPoi mapPoi) {
-                return false;
             }
         });
 
@@ -179,11 +179,20 @@ public class MarkerActivity extends AppCompatActivity{
         etLatitude = (EditText) findViewById(R.id.id_et_latitude);
         etLongitude = (EditText) findViewById(R.id.id_et_longitude);
 
-        btnSubmit = (Button) findViewById(R.id.id_btn_submit);
+        Button btnSubmit = (Button) findViewById(R.id.id_btn_submit);
         btnSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //TODO---判断输入框中的数据是否可用---然后提交数据
+                if(MarkerHelper.isDataValid(etLatitude, etLongitude)){
+                    //修改数据
+                    markerItem.setLatitude(MarkerHelper.getLatitude(etLatitude));
+                    markerItem.setLongitude(MarkerHelper.getLongitude(etLongitude));
+                    //保存数据
+                    markerItem.save();
+                    //退出
+                    finish();
+                }
             }
         });
 
@@ -230,9 +239,11 @@ public class MarkerActivity extends AppCompatActivity{
     private void locate(BDLocation location) {
         MyLocationData locData = new MyLocationData.Builder()
                 .accuracy(location.getRadius())
-                        // 此处设置开发者获取到的方向信息，顺时针0-360
-                .direction(100).latitude(location.getLatitude())
+               // 此处设置开发者获取到的方向信息，顺时针0-360
+                .direction(location.getDirection())
+                .latitude(location.getLatitude())
                 .longitude(location.getLongitude()).build();
+
         mBaiduMap.setMyLocationData(locData);
         LatLng ll = new LatLng(location.getLatitude(),
                 location.getLongitude());
@@ -254,9 +265,29 @@ public class MarkerActivity extends AppCompatActivity{
         mBaiduMap.animateMapStatus(u);
     }
 
-    public static void start(Context context) {
-        Intent intent = new Intent(context, MarkerActivity.class);
-        context.startActivity(intent);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_activity_mark, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.id_action_measure:
+                //开启测量工具模式----改变toolbar
+                break;
+            case android.R.id.home:
+                finish();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+        //如果直接想返回---需要删除提前在数据库中保存的数据
+        markerItem.delete();
+        super.onBackPressed();
     }
 
     //生命周期----------------------------------------------
