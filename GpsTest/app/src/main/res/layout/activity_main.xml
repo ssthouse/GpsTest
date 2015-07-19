@@ -1,18 +1,19 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity" >
 
-    <android.support.v7.widget.Toolbar
+    <com.baidu.mapapi.map.MapView
+        android:id="@+id/mapview"
         android:layout_width="match_parent"
-        android:layout_height="50dp">
+        android:layout_height="match_parent" >
+    </com.baidu.mapapi.map.MapView>
 
-
-    </android.support.v7.widget.Toolbar>
-
-    <FrameLayout
-        android:id="@+id/id_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-</LinearLayout>
+    <ImageView 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:src="@drawable/locate1"
+        android:contentDescription="@null"/>
+</RelativeLayout>
