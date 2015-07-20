@@ -10,6 +10,8 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.baidu.lbsapi.auth.LBSAuthManagerListener;
+import com.baidu.navisdk.BNaviEngineManager;
 import com.baidu.navisdk.BaiduNaviManager;
 import com.baidu.navisdk.CommonParams;
 import com.baidu.navisdk.comapi.mapcontrol.BNMapController;
@@ -29,7 +31,9 @@ import com.baidu.navisdk.util.common.PreferenceHelper;
 import com.baidu.navisdk.util.common.ScreenUtil;
 import com.baidu.nplatform.comapi.map.MapGLSurfaceView;
 import com.ssthouse.gpstest.R;
-import com.ssthouse.gpstest.util.gps.NavigateHelper;
+import com.ssthouse.gpstest.util.FileHelper;
+import com.ssthouse.gpstest.util.LogHelper;
+import com.ssthouse.gpstest.util.ToastHelper;
 
 import java.util.ArrayList;
 
@@ -38,12 +42,13 @@ import java.util.ArrayList;
  * Created by ssthouse on 2015/7/17.
  */
 public class RoutePlanActivity extends Activity {
+    private static final String TAG = "RouteActivity";
 
     private RoutePlanModel mRoutePlanModel = null;
 
     private MapGLSurfaceView mMapView = null;
 
-    public static void start(Context context){
+    public static void start(Context context) {
         context.startActivity(new Intent(context, RoutePlanActivity.class));
     }
 
@@ -52,12 +57,12 @@ public class RoutePlanActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rout_select);
 
-        NavigateHelper.initNavi(this);
+        initNavi(this);
         initView();
     }
 
 
-    private void initView(){
+    private void initView() {
         //初始化mapView
 
 
@@ -93,26 +98,6 @@ public class RoutePlanActivity extends Activity {
         });
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        BNRoutePlaner.getInstance().setRouteResultObserver(null);
-        ((ViewGroup) (findViewById(R.id.id_map_view))).removeAllViews();
-        BNMapController.getInstance().onPause();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        initMapView();
-        ((ViewGroup) (findViewById(R.id.id_map_view))).addView(mMapView);
-        BNMapController.getInstance().onResume();
-    }
 
     private void initMapView() {
         if (Build.VERSION.SDK_INT < 14) {
@@ -125,14 +110,53 @@ public class RoutePlanActivity extends Activity {
                 MapParams.Const.LayerMode.MAP_LAYER_MODE_BROWSE_MAP);
         updateCompassPosition();
 
-        BNMapController.getInstance().locateWithAnimation(
-                (int) (113.97348 * 1e5), (int) (22.53951 * 1e5));
+    }
+
+    /**
+     * 初始化导航功能
+     */
+    public static void initNavi(final Activity context) {
+        BNaviEngineManager.NaviEngineInitListener naviListener = new BNaviEngineManager.NaviEngineInitListener() {
+
+            @Override
+            public void engineInitStart() {
+                LogHelper.Log(TAG, "初始化导航-----");
+            }
+
+            @Override
+            public void engineInitSuccess() {
+                LogHelper.Log(TAG, "初始化成功");
+
+                BNMapController.getInstance().locateWithAnimation(
+                        (int) (113.97348 * 1e5), (int) (22.53951 * 1e5));
+            }
+
+            @Override
+            public void engineInitFail() {
+                LogHelper.Log(TAG, "初始化失败");
+            }
+        };
+
+        LBSAuthManagerListener authListener = new LBSAuthManagerListener() {
+
+            @Override
+            public void onAuthResult(int status, String msg) {
+                if (0 == status) {
+                    ToastHelper.show(context, "key校验成功-----");
+                } else {
+                    ToastHelper.show(context, "key校验失败-----");
+                }
+            }
+        };
+
+        BaiduNaviManager.getInstance().initEngine(context, FileHelper.getSDPath(),
+                naviListener, authListener);
     }
 
     /**
      * 更新指南针位置
      */
-    private void updateCompassPosition(){
+    private void updateCompassPosition() {
         int screenW = this.getResources().getDisplayMetrics().widthPixels;
         BNMapController.getInstance().resetCompassPosition(
                 screenW - ScreenUtil.dip2px(this, 30),
@@ -173,7 +197,7 @@ public class RoutePlanActivity extends Activity {
         // 设置起终点并算路
         boolean ret = BNRoutePlaner.getInstance().setPointsToCalcRoute(
                 nodeList, CommonParams.NL_Net_Mode.NL_Net_Mode_OnLine);
-        if(!ret){
+        if (!ret) {
             Toast.makeText(this, "规划失败", Toast.LENGTH_SHORT).show();
         }
     }
@@ -259,4 +283,26 @@ public class RoutePlanActivity extends Activity {
             // TODO Auto-generated method stub
         }
     };
+
+    //生命周期***********************************************************
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        BNRoutePlaner.getInstance().setRouteResultObserver(null);
+        ((ViewGroup) (findViewById(R.id.id_map_view))).removeAllViews();
+        BNMapController.getInstance().onPause();
+    }
+
+    @Override
+    public void onResume() {
+        initMapView();
+        ((ViewGroup) (findViewById(R.id.id_map_view))).addView(mMapView);
+        BNMapController.getInstance().onResume();
+        super.onResume();
+    }
 }

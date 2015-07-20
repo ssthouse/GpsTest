@@ -53,7 +53,7 @@
         </LinearLayout>
 
         <ImageButton
-            android:id="@+id/id_btn_locate"
+            android:id="@+id/id_ib_locate"
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:layout_gravity="bottom|left"

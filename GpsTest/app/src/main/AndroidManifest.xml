@@ -83,8 +83,7 @@
 
         <activity android:name=".activity.RoutePlanActivity" />
 
-        <activity android:name=".test.PictureShowActivity" />
-        <activity android:name=".test.DemoActivity"></activity>
+        <activity android:name=".activity.MeasureActivity"/>
     </application>
 
 </manifest>

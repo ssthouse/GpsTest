@@ -17,4 +17,8 @@ public class Constant {
     //Extra的key
     public static final String EXTRA_KEY_PRJ_ITEM = "prjItem";
     public static final String EXTRA_KEY_MARKER_ITEM = "markerItem";
+
+    //result_code
+    public static final int RESULT_CODE_OK = 2000;
+    public static final int RESULT_CODE_NOT_OK = 2001;
 }

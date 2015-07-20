@@ -33,13 +33,16 @@ import com.ssthouse.gpstest.model.MarkerItem;
 import com.ssthouse.gpstest.util.AnimHelper;
 import com.ssthouse.gpstest.util.LogHelper;
 import com.ssthouse.gpstest.util.gps.LocateHelper;
+import com.ssthouse.gpstest.util.gps.MapHelper;
 import com.ssthouse.gpstest.util.gps.MarkerHelper;
 
 /**
  * 用于选址的Activity---开启当前的Acitcvity需要传递一个MarkerItem
+ * -----如果MarkerItem数据不是0-0就定位到传入的位置--修改选址
+ * -----如果MarkerItem数据是0-0,定位到自己当前的位置--新建选址
  * Created by ssthouse on 2015/7/17.
  */
-public class MarkerActivity extends AppCompatActivity{
+public class MarkerActivity extends AppCompatActivity {
     private static final String TAG = "MarkerActivity";
 
     //开启本Activity需要的数据
@@ -60,7 +63,7 @@ public class MarkerActivity extends AppCompatActivity{
     //视图中间的marker
     private ImageView ivMark;
     //控制状态的button
-    private ImageButton imageButton;
+    private ImageButton ibMode;
 
     //用于Activity开启时的第一次定位
     private boolean isFistIn = true;
@@ -75,7 +78,6 @@ public class MarkerActivity extends AppCompatActivity{
             if (location == null || mMapView == null) {
                 return;
             }
-            //TODO---这里其实没有每秒都要做的事--就先空着
             //locate(location);
             if (isFistIn) {
                 locate(location);
@@ -125,15 +127,20 @@ public class MarkerActivity extends AppCompatActivity{
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        toolbar.setTitle("hahah");
-
         mMapView = (MapView) findViewById(R.id.id_map_view);
+        //如果是编辑---定位到编辑的点
+        if (markerItem.getLatitude() != 0 && markerItem.getLongitude() != 0) {
+            MapHelper.animatToPoint(mBaiduMap,
+                    new LatLng(markerItem.getLatitude(), markerItem.getLongitude()));
+        }
         mBaiduMap = mMapView.getMap();
         UiSettings uiSettings = mBaiduMap.getUiSettings();
         //开启指南针
         uiSettings.setCompassEnabled(true);
         // 开启定位图层
         mBaiduMap.setMyLocationEnabled(true);
+        mBaiduMap.setMyLocationConfigeration(new MyLocationConfiguration(
+                MyLocationConfiguration.LocationMode.NORMAL, true, null));
 
         //地图的触摸监听事件
         mBaiduMap.setOnMapTouchListener(new BaiduMap.OnMapTouchListener() {
@@ -142,8 +149,8 @@ public class MarkerActivity extends AppCompatActivity{
                 //一旦摸到---就表示未定位
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                     isLocated = false;
-                    imageButton.setImageResource(R.drawable.locate1);
-                    LogHelper.Log(TAG, "我摸到了---地图");
+                    ibMode.setImageResource(R.drawable.locate1);
+//                    LogHelper.Log(TAG, "我摸到了---地图");
                 }
 
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
@@ -183,13 +190,14 @@ public class MarkerActivity extends AppCompatActivity{
         btnSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //TODO---判断输入框中的数据是否可用---然后提交数据
-                if(MarkerHelper.isDataValid(etLatitude, etLongitude)){
+                if (MarkerHelper.isDataValid(etLatitude, etLongitude)) {
                     //修改数据
                     markerItem.setLatitude(MarkerHelper.getLatitude(etLatitude));
                     markerItem.setLongitude(MarkerHelper.getLongitude(etLongitude));
                     //保存数据
                     markerItem.save();
+                    //设置返回值
+                    setResult(Constant.RESULT_CODE_OK);
                     //退出
                     finish();
                 }
@@ -197,8 +205,8 @@ public class MarkerActivity extends AppCompatActivity{
         });
 
         //模式切换按钮---兼定位按钮
-        imageButton = (ImageButton) findViewById(R.id.id_btn_locate);
-        imageButton.setOnClickListener(new View.OnClickListener() {
+        ibMode = (ImageButton) findViewById(R.id.id_ib_locate);
+        ibMode.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (isLocated) {
@@ -206,12 +214,12 @@ public class MarkerActivity extends AppCompatActivity{
                     if (mCurrentMode == MyLocationConfiguration.LocationMode.NORMAL) {
                         LogHelper.Log(TAG, "change to compass mode");
                         mCurrentMode = MyLocationConfiguration.LocationMode.COMPASS;
-                        imageButton.setImageResource(R.drawable.location_mode_2);
+                        ibMode.setImageResource(R.drawable.location_mode_2);
                         enableEagle();
                     } else if (mCurrentMode == MyLocationConfiguration.LocationMode.COMPASS) {
                         LogHelper.Log(TAG, "change to normal mode");
                         mCurrentMode = MyLocationConfiguration.LocationMode.NORMAL;
-                        imageButton.setImageResource(R.drawable.location_mode_1);
+                        ibMode.setImageResource(R.drawable.location_mode_1);
                         disableEagle();
                     }
                 } else {
@@ -222,9 +230,9 @@ public class MarkerActivity extends AppCompatActivity{
                     isLocated = true;
                     //判断当前状态---切换图标
                     if (mCurrentMode == MyLocationConfiguration.LocationMode.NORMAL) {
-                        imageButton.setImageResource(R.drawable.location_mode_1);
+                        ibMode.setImageResource(R.drawable.location_mode_1);
                     } else if (mCurrentMode == MyLocationConfiguration.LocationMode.COMPASS) {
-                        imageButton.setImageResource(R.drawable.location_mode_2);
+                        ibMode.setImageResource(R.drawable.location_mode_2);
                     }
                 }
             }
@@ -237,18 +245,18 @@ public class MarkerActivity extends AppCompatActivity{
      * @param location
      */
     private void locate(BDLocation location) {
+        //更新我的位置
         MyLocationData locData = new MyLocationData.Builder()
                 .accuracy(location.getRadius())
-               // 此处设置开发者获取到的方向信息，顺时针0-360
+                        // 此处设置开发者获取到的方向信息，顺时针0-360
                 .direction(location.getDirection())
                 .latitude(location.getLatitude())
                 .longitude(location.getLongitude()).build();
-
         mBaiduMap.setMyLocationData(locData);
+        //更新地图中心点
         LatLng ll = new LatLng(location.getLatitude(),
                 location.getLongitude());
-        MapStatusUpdate u = MapStatusUpdateFactory.newLatLng(ll);
-        mBaiduMap.animateMapStatus(u);
+        MapHelper.animatToPoint(mBaiduMap, ll);
     }
 
     private void enableEagle() {
@@ -273,11 +281,14 @@ public class MarkerActivity extends AppCompatActivity{
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
-            case R.id.id_action_measure:
-                //开启测量工具模式----改变toolbar
+        switch (item.getItemId()) {
+            case R.id.id_action_load_map:
+                break;
+            case R.id.id_action_load_marker:
                 break;
             case android.R.id.home:
+                markerItem.delete();
+                setResult(Constant.RESULT_CODE_OK);
                 finish();
         }
         return super.onOptionsItemSelected(item);
@@ -287,6 +298,7 @@ public class MarkerActivity extends AppCompatActivity{
     public void onBackPressed() {
         //如果直接想返回---需要删除提前在数据库中保存的数据
         markerItem.delete();
+        setResult(Constant.RESULT_CODE_OK);
         super.onBackPressed();
     }
 

@@ -24,6 +24,7 @@ public class PrjItem extends Model implements Serializable{
 
     public PrjItem() {
         super();
+        prjName = "";
     }
 
     //getter-----------and---------------setter---------

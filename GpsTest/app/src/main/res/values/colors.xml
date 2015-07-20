@@ -16,6 +16,7 @@
     <color name="white">#ffffffff</color>
     <color name="black">#ff000000</color>
     <color name="gray">#bdbdbd</color>
+    <color name="trans_gray">#99bdbdbd</color>
 
     <color name="app_primary">@color/material_blue_grey_800</color>
     <color name="app_primary_pressed">@color/material_blue_grey_900</color>

@@ -7,6 +7,8 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
+import com.baidu.lbsapi.auth.LBSAuthManagerListener;
+import com.baidu.navisdk.BNaviEngineManager;
 import com.baidu.navisdk.BaiduNaviManager;
 import com.baidu.navisdk.comapi.mapcontrol.BNMapController;
 import com.baidu.navisdk.comapi.routeplan.BNRoutePlaner;
@@ -19,13 +21,16 @@ import com.baidu.navisdk.ui.routeguide.BNavigator;
 import com.baidu.navisdk.ui.routeguide.IBNavigatorListener;
 import com.baidu.navisdk.ui.widget.RoutePlanObserver;
 import com.baidu.nplatform.comapi.map.MapGLSurfaceView;
-import com.ssthouse.gpstest.util.gps.NavigateHelper;
+import com.ssthouse.gpstest.util.FileHelper;
+import com.ssthouse.gpstest.util.LogHelper;
+import com.ssthouse.gpstest.util.ToastHelper;
 
 /**
  * 百度自带----导航Activity
  * Created by ssthouse on 2015/7/17.
  */
 public class NaviActivity extends Activity {
+    private static final String TAG = "NaviActivity";
 
     public static void start(Context context){
         context.startActivity(new Intent(context, NaviActivity.class));
@@ -35,7 +40,7 @@ public class NaviActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        NavigateHelper.initNavi(this);
+        initNavi(this);
 
         MapGLSurfaceView nMapView = BaiduNaviManager.getInstance().createNMapView(this);
 
@@ -88,6 +93,47 @@ public class NaviActivity extends Activity {
                 // TODO Auto-generated method stub
             }
         }));
+    }
+
+    /**
+     * 初始化导航功能
+     */
+    public static  void initNavi(final Activity context) {
+        BNaviEngineManager.NaviEngineInitListener naviListener = new BNaviEngineManager.NaviEngineInitListener() {
+
+            @Override
+            public void engineInitStart() {
+                LogHelper.Log(TAG, "初始化导航-----");
+            }
+
+            @Override
+            public void engineInitSuccess() {
+                LogHelper.Log(TAG, "初始化成功");
+
+                BNMapController.getInstance().locateWithAnimation(
+                        (int) (113.97348 * 1e5), (int) (22.53951 * 1e5));
+            }
+
+            @Override
+            public void engineInitFail() {
+                LogHelper.Log(TAG, "初始化失败");
+            }
+        };
+
+        LBSAuthManagerListener authListener = new LBSAuthManagerListener() {
+
+            @Override
+            public void onAuthResult(int status, String msg) {
+                if (0 == status) {
+                    ToastHelper.show(context, "key校验成功-----");
+                } else {
+                    ToastHelper.show(context, "key校验失败-----");
+                }
+            }
+        };
+
+        BaiduNaviManager.getInstance().initEngine(context, FileHelper.getSDPath(),
+                naviListener, authListener);
     }
 
     private IBNavigatorListener mBNavigatorListener = new IBNavigatorListener() {

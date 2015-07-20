@@ -14,6 +14,7 @@ import com.github.clans.fab.FloatingActionButton;
 import com.ssthouse.gpstest.R;
 import com.ssthouse.gpstest.adapter.PrjLvAdapter;
 import com.ssthouse.gpstest.model.DBHelper;
+import com.ssthouse.gpstest.model.PrjItem;
 import com.ssthouse.gpstest.util.DialogHelper;
 import com.ssthouse.gpstest.util.ToastHelper;
 
@@ -37,7 +38,7 @@ public class PrjSelectActivity extends AppCompatActivity{
 
         //TODO---测试代码
 //        MarkerActivity.start(this);
-//        startActivity(new Intent(this, DemoActivity.class));
+        MeasureActivity.start(this, new PrjItem());
     }
 
     private void initView(){
