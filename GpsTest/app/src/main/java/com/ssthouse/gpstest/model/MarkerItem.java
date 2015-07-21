@@ -3,12 +3,10 @@ package com.ssthouse.gpstest.model;
 import com.activeandroid.Model;
 import com.activeandroid.annotation.Column;
 import com.activeandroid.annotation.Table;
-import com.activeandroid.query.Select;
 import com.baidu.mapapi.model.LatLng;
 import com.ssthouse.gpstest.Constant;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * 单个的Marker对象---一个
@@ -67,23 +65,13 @@ public class MarkerItem extends Model implements Serializable {
         super();
     }
 
-    public List<PhotoItem> getPhotpItemList() {
-        List<PhotoItem> photoItemList = new Select().from(PhotoItem.class)
-                .where("latitude = " +
-                        "'" + latitude + "'" +
-                        " AND longitude = " +
-                        "'" + longitude + "'"
-                        + " AND prjName = " +
-                        "'" + prjName + "'")
-                .execute();
-        return photoItemList;
-    }
 
     public String getFilePath() {
-        return Constant.PICTURE_PATH + prjName + latitude + "_" + longitude + "/";
+        return Constant.PICTURE_PATH + prjName + "/" + latitude + "_" + longitude + "/";
     }
 
     //getter-----and------setter--------------------------
+
     public double getLatitude() {
         return latitude;
     }

@@ -110,13 +110,7 @@ public class PrjEditActivity extends AppCompatActivity {
         loadMapData(mBaiduMap, prjItem);
 
         //TODO-------------------------测试代码
-//        MarkerHelper.mark(mBaiduMap, new LatLng(30.5, 114.4));
-
 //        NavigateHelper.initNavi(this);
-
-//        PictureHelper.showPictureInAlbum(this, "/storage/sdcard0/DCIM/Camera/IMG_20150712_104954.jpg");
-//        PictureHelper.showPictureInAlbum(this, "/storage/sdcard0/picture/a21.jpg");
-//        PictureHelper.showPictureInAlbum(this, "/sdcard/storage/adcard0/picture/a21.jpg");
     }
 
     private void initView() {
@@ -285,6 +279,7 @@ public class PrjEditActivity extends AppCompatActivity {
         MapHelper.animateToPoint(baiduMap,
                 new LatLng(markerItemList.get(0).getLatitude(),
                         markerItemList.get(0).getLongitude()));
+        MapHelper.animateZoom(baiduMap, 15);
         return true;
     }
 
