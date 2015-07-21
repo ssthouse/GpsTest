@@ -21,6 +21,7 @@ import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
 import com.baidu.mapapi.map.MapPoi;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.Marker;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
@@ -31,7 +32,7 @@ import com.baidu.mapapi.utils.DistanceUtil;
 import com.ssthouse.gpstest.Constant;
 import com.ssthouse.gpstest.R;
 import com.ssthouse.gpstest.model.PrjItem;
-import com.ssthouse.gpstest.util.LogHelper;
+import com.ssthouse.gpstest.model.widget.ZoomControlView;
 import com.ssthouse.gpstest.util.gps.LocateHelper;
 import com.ssthouse.gpstest.util.gps.MapHelper;
 
@@ -66,7 +67,8 @@ public class MeasureActivity extends AppCompatActivity {
     BitmapDescriptor descriptorRed = BitmapDescriptorFactory
             .fromResource(R.drawable.icon_measure_red);
     //手指在地图上点下的标记List---用OverLay来实现
-    private List<LatLng> points = new ArrayList<>();
+    private List<Marker> markerList = new ArrayList<>();
+    private List<LatLng> pointList = new ArrayList<>();
     //构造对象--折线对象
     private OverlayOptions polylineOptions = new PolylineOptions();
 
@@ -86,6 +88,8 @@ public class MeasureActivity extends AppCompatActivity {
         prjItem = (PrjItem) getIntent().getSerializableExtra(Constant.EXTRA_KEY_PRJ_ITEM);
 
         initView();
+
+       // MapHelper.loadMarker(mBaiduMap, prjItem);
 
         //初始化数据
         mLocationClient = new LocationClient(this);
@@ -112,10 +116,15 @@ public class MeasureActivity extends AppCompatActivity {
         tvLength = (TextView) findViewById(R.id.id_tv_length);
 
         mMapView = (MapView) findViewById(R.id.id_map_view);
+        mMapView.showZoomControls(false);
         mBaiduMap = mMapView.getMap();
         mBaiduMap.setMyLocationEnabled(true);
         mBaiduMap.setMyLocationConfigeration(new MyLocationConfiguration(
                 MyLocationConfiguration.LocationMode.NORMAL, true, null));
+
+        //获取缩放控件
+        ZoomControlView zcvZomm = (ZoomControlView) findViewById(R.id.id_zoom_control);
+        zcvZomm.setMapView(mMapView);//设置百度地图控件
 
         mBaiduMap.setOnMapTouchListener(new BaiduMap.OnMapTouchListener() {
             @Override
@@ -131,7 +140,10 @@ public class MeasureActivity extends AppCompatActivity {
             @Override
             public void onMapClick(LatLng latLng) {
                 //将点击位置存入List
-                points.add(latLng);
+                OverlayOptions options = new MarkerOptions().icon(descriptorRed).position(latLng);
+                markerList.add((Marker) mBaiduMap.addOverlay(options));
+                //添加坐标点
+                pointList.add(latLng );
                 //重新计算总长
                 updateLength();
                 //重画
@@ -172,7 +184,7 @@ public class MeasureActivity extends AppCompatActivity {
         //更新地图中心点
         LatLng ll = new LatLng(location.getLatitude(),
                 location.getLongitude());
-        MapHelper.animatToPoint(mBaiduMap, ll);
+        MapHelper.animateToPoint(mBaiduMap, ll);
     }
 
     /**
@@ -181,18 +193,18 @@ public class MeasureActivity extends AppCompatActivity {
     private void redraw() {
         mBaiduMap.clear();
         //画出线
-        if (points.size() > 1) {
-            polylineOptions = new PolylineOptions().width(15).color(Color.BLUE).points(points);
+        if (pointList.size() > 1) {
+            polylineOptions = new PolylineOptions().width(15).color(Color.BLUE).points(pointList);
             mBaiduMap.addOverlay(polylineOptions);
         }
         //画出标记点
-        for (int i = 0; i < points.size(); i++) {
-            if (i == 0 || i == points.size() - 1) {
-                OverlayOptions redOverlay = new MarkerOptions().position(points.get(i)).icon(descriptorRed)
+        for (int i = 0; i < pointList.size(); i++) {
+            if (i == 0 || i == pointList.size() - 1) {
+                OverlayOptions redOverlay = new MarkerOptions().position(pointList.get(i)).icon(descriptorRed)
                         .zIndex(9).draggable(true);
                 mBaiduMap.addOverlay(redOverlay);
             } else {
-                OverlayOptions blueOverlay = new MarkerOptions().position(points.get(i)).icon(descriptorBlue)
+                OverlayOptions blueOverlay = new MarkerOptions().position(pointList.get(i)).icon(descriptorBlue)
                         .zIndex(9).draggable(true);
                 mBaiduMap.addOverlay(blueOverlay);
             }
@@ -204,17 +216,15 @@ public class MeasureActivity extends AppCompatActivity {
      */
     private void updateLength() {
         double length = 0;
-        for (int i = 0; i < points.size() - 1; i++) {
-            double gap = DistanceUtil.getDistance(points.get(i), points.get(i+1));
+        for (int i = 0; i < pointList.size() - 1; i++) {
+            double gap = DistanceUtil.getDistance(pointList.get(i), pointList.get(i+1));
             length += gap;
-            LogHelper.Log(TAG, gap + "");
+//            LogHelper.Log(TAG, gap + "");
         }
         if (length != 0) {
             int result = (int) length;
             tvLength.setText(result + "米");
         } else {
-            LogHelper.Log(TAG, "竟然总长是0");
-
             tvLength.setText(0 + "米");
         }
     }
@@ -229,8 +239,8 @@ public class MeasureActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.id_action_back_one_point:
-                if (points.size() != 0) {
-                    points.remove(points.size() - 1);
+                if (pointList.size() != 0) {
+                    pointList.remove(pointList.size() - 1);
                     updateLength();
                     redraw();
                 }
@@ -238,7 +248,7 @@ public class MeasureActivity extends AppCompatActivity {
             case R.id.id_action_delete_all:
 //                polylineOptions.
                 updateLength();
-                points.clear();
+                pointList.clear();
                 redraw();
                 break;
             case android.R.id.home:
@@ -271,5 +281,7 @@ public class MeasureActivity extends AppCompatActivity {
         // activity 销毁时同时销毁地图控件
         mMapView.onDestroy();
         super.onDestroy();
+        descriptorBlue.recycle();
+        descriptorRed.recycle();
     }
 }

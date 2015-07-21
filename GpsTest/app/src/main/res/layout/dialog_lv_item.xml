@@ -12,7 +12,7 @@
         android:gravity="center"
         android:text="删除"
         android:textColor="@color/white"
-        android:textSize="@dimen/text_size_large" />
+        android:textSize="@dimen/text_size_normal" />
 
     <TextView
         android:background="@drawable/lv_item_selector"
@@ -22,7 +22,7 @@
         android:gravity="center"
         android:text="编辑"
         android:textColor="@color/white"
-        android:textSize="@dimen/text_size_large" />
+        android:textSize="@dimen/text_size_normal" />
 
     <TextView
         android:background="@drawable/lv_item_selector"
@@ -32,5 +32,5 @@
         android:gravity="center"
         android:text="重命名"
         android:textColor="@color/white"
-        android:textSize="@dimen/text_size_large" />
+        android:textSize="@dimen/text_size_normal" />
 </LinearLayout>

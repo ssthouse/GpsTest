@@ -8,7 +8,7 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import com.ssthouse.gpstest.R;
-import com.ssthouse.gpstest.model.DBHelper;
+import com.ssthouse.gpstest.util.gps.DBHelper;
 import com.ssthouse.gpstest.model.PrjItem;
 
 import java.util.List;

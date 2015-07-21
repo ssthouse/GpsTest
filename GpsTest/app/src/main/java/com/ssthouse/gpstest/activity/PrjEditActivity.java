@@ -10,22 +10,34 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.BitmapDescriptor;
+import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.InfoWindow;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.Marker;
+import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.MyLocationConfiguration;
 import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.model.LatLng;
 import com.ssthouse.gpstest.Constant;
 import com.ssthouse.gpstest.R;
 import com.ssthouse.gpstest.model.MarkerItem;
 import com.ssthouse.gpstest.model.PrjItem;
+import com.ssthouse.gpstest.model.widget.ZoomControlView;
 import com.ssthouse.gpstest.util.ToastHelper;
+import com.ssthouse.gpstest.util.gps.DBHelper;
 import com.ssthouse.gpstest.util.gps.LocateHelper;
 import com.ssthouse.gpstest.util.gps.MapHelper;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 开启时会接收到一个PrjItem---intent中
@@ -33,13 +45,18 @@ import com.ssthouse.gpstest.util.gps.MapHelper;
 public class PrjEditActivity extends AppCompatActivity {
     private static final String TAG = "PrjEditActivity";
 
-    private static final int REQUEST_CODE_ROUTE_ACTIVITY = 1000;
-    private static final int REQUEST_CODE_MARKER_ACTIVITY = 1001;
-    private static final int REQUEST_CODE_PICTURE_ACTIVITY = 1002;
+    public static final int REQUEST_CODE_ROUTE_ACTIVITY = 1000;
+    public static final int REQUEST_CODE_MARKER_ACTIVITY = 1001;
+    public static final int REQUEST_CODE_PICTURE_ACTIVITY = 1002;
+    public static final int REQUEST_CODE_MARKER_EDIT_ACTIVITY = 1003;
 
-    /**
-     * 接收到的数据
-     */
+    //标记点相关的
+    BitmapDescriptor descriptorBlue = BitmapDescriptorFactory
+            .fromResource(R.drawable.icon_measure_blue);
+    BitmapDescriptor descriptorRed = BitmapDescriptorFactory
+            .fromResource(R.drawable.icon_measure_red);
+
+    //接收到的数据
     private PrjItem prjItem;
 
     private BaiduMap mBaiduMap;
@@ -48,6 +65,12 @@ public class PrjEditActivity extends AppCompatActivity {
     private boolean isLocated = false;
 
     private ImageButton ibLocate;
+
+    private List<LatLng> pointList = new ArrayList<>();
+    private List<Marker> markerList = new ArrayList<>();
+    private List<MarkerItem> markerItemList = new ArrayList<>();
+    private Marker currentMarker;
+    private InfoWindow mInfoWindow;
 
     /**
      * 用于更加方便的开启Activity
@@ -84,6 +107,8 @@ public class PrjEditActivity extends AppCompatActivity {
 
         initView();
 
+        loadMapData(mBaiduMap, prjItem);
+
         //TODO-------------------------测试代码
 //        MarkerHelper.mark(mBaiduMap, new LatLng(30.5, 114.4));
 
@@ -93,7 +118,6 @@ public class PrjEditActivity extends AppCompatActivity {
 //        PictureHelper.showPictureInAlbum(this, "/storage/sdcard0/picture/a21.jpg");
 //        PictureHelper.showPictureInAlbum(this, "/sdcard/storage/adcard0/picture/a21.jpg");
     }
-
 
     private void initView() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.id_tb);
@@ -108,20 +132,60 @@ public class PrjEditActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mMapView = (MapView) findViewById(R.id.id_baidu_map);
+        mMapView.showZoomControls(false);
         mBaiduMap = mMapView.getMap();
         mBaiduMap.setMyLocationEnabled(true);
         mBaiduMap.setMyLocationConfigeration(new MyLocationConfiguration(
                 MyLocationConfiguration.LocationMode.NORMAL, true, null));
 
+        //获取缩放控件
+        ZoomControlView zcvZomm = (ZoomControlView) findViewById(R.id.id_zoom_control);
+        zcvZomm.setMapView(mMapView);//设置百度地图控件
+
         mBaiduMap.setOnMapTouchListener(new BaiduMap.OnMapTouchListener() {
             @Override
             public void onTouch(MotionEvent motionEvent) {
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                    isLocated = false;
                     ibLocate.setImageResource(R.drawable.locate2);
+                    isLocated = false;
                 }
             }
         });
+
+        //marker的点击事件
+        mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(final Marker marker) {
+                //如果点的是已经选中了的Marker---变回未选中状态
+                if (marker == currentMarker) {
+                    marker.setIcon(descriptorBlue);
+                    currentMarker = null;
+                    mBaiduMap.hideInfoWindow();
+                    return true;
+                }
+                for (Marker item : markerList) {
+                    item.setIcon(descriptorBlue);
+                }
+                //选中了MArker---进行操作准备
+                marker.setIcon(descriptorRed);
+                //填充一个Button到marker上方的对话框中---WindowInfo
+                LinearLayout ll = (LinearLayout) getLayoutInflater().inflate(R.layout.info_window, null);
+                InfoWindow.OnInfoWindowClickListener listener = new InfoWindow.OnInfoWindowClickListener() {
+                    public void onInfoWindowClick() {
+                        mBaiduMap.hideInfoWindow();
+                        MarkerActivity.start(PrjEditActivity.this,
+                                DBHelper.getMarkerList(prjItem).get(markerList.indexOf(marker)),
+                                REQUEST_CODE_MARKER_EDIT_ACTIVITY);
+                    }
+                };
+                LatLng latLng = marker.getPosition();
+                mInfoWindow = new InfoWindow(BitmapDescriptorFactory.fromView(ll), latLng, -47, listener);
+                mBaiduMap.showInfoWindow(mInfoWindow);
+                currentMarker = marker;
+                return true;
+            }
+        });
+
 
         ibLocate = (ImageButton) findViewById(R.id.id_ib_locate);
         ibLocate.setOnClickListener(new View.OnClickListener() {
@@ -165,6 +229,13 @@ public class PrjEditActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //TODO
+                if (currentMarker == null) {
+                    ToastHelper.show(PrjEditActivity.this, "请先选择一个基址点");
+                } else {
+                    //开启拍照模式!!!
+                    PicGridActivity.start(PrjEditActivity.this,
+                            markerItemList.get(markerList.indexOf(currentMarker)));
+                }
             }
         });
     }
@@ -179,7 +250,43 @@ public class PrjEditActivity extends AppCompatActivity {
         //更新地图中心点
         LatLng ll = new LatLng(location.getLatitude(),
                 location.getLongitude());
-        MapHelper.animatToPoint(mBaiduMap, ll);
+        MapHelper.animateToPoint(mBaiduMap, ll);
+    }
+
+    /**
+     * 加载Marker
+     *
+     * @param baiduMap
+     * @param prjItem
+     * @return
+     */
+    public boolean loadMapData(BaiduMap baiduMap, PrjItem prjItem) {
+        if (prjItem == null || baiduMap == null) {
+            return false;
+        }
+        if (DBHelper.isPrjEmpty(prjItem)) {
+            return false;
+        }
+        markerItemList.clear();
+        markerList.clear();
+        pointList.clear();
+        markerItemList = DBHelper.getMarkerList(prjItem);
+        //加载marker
+        for (int i = 0; i < markerItemList.size(); i++) {
+            LatLng latLng = new LatLng(markerItemList.get(i).getLatitude(),
+                    markerItemList.get(i).getLongitude());
+            OverlayOptions redOverlay = new MarkerOptions()
+                    .position(latLng)
+                    .icon(descriptorBlue)
+                    .zIndex(9)
+                    .draggable(false);
+            markerList.add((Marker) baiduMap.addOverlay(redOverlay));
+            pointList.add(latLng);
+        }
+        MapHelper.animateToPoint(baiduMap,
+                new LatLng(markerItemList.get(0).getLatitude(),
+                        markerItemList.get(0).getLongitude()));
+        return true;
     }
 
     @Override
@@ -218,6 +325,17 @@ public class PrjEditActivity extends AppCompatActivity {
             case REQUEST_CODE_MARKER_ACTIVITY:
                 if (resultCode == Constant.RESULT_CODE_OK) {
                     //TODO---重新获取MarkerItem--重新画图
+                    MapHelper.loadMarker(mBaiduMap, prjItem);
+                    //更新当前Activity中的数据
+                    loadMapData(mBaiduMap, prjItem);
+                }
+                break;
+            case REQUEST_CODE_MARKER_EDIT_ACTIVITY:
+                if (resultCode == Constant.RESULT_CODE_OK) {
+                    //TODO---重新获取MarkerItem--重新画图
+                    MapHelper.loadMarker(mBaiduMap, prjItem);
+                    //更新当前Activity中的数据
+                    loadMapData(mBaiduMap, prjItem);
                 }
                 break;
             case REQUEST_CODE_ROUTE_ACTIVITY:
@@ -232,16 +350,16 @@ public class PrjEditActivity extends AppCompatActivity {
     //生命周期***********************************************************
     @Override
     protected void onPause() {
-        super.onPause();
         // activity 暂停时同时暂停地图控件
         mMapView.onPause();
+        super.onPause();
     }
 
     @Override
     protected void onResume() {
-        super.onResume();
         // activity 恢复时同时恢复地图控件
         mMapView.onResume();
+        super.onResume();
     }
 
     @Override
@@ -251,5 +369,7 @@ public class PrjEditActivity extends AppCompatActivity {
         // activity 销毁时同时销毁地图控件
         mMapView.onDestroy();
         super.onDestroy();
+        descriptorBlue.recycle();
+        descriptorRed.recycle();
     }
 }

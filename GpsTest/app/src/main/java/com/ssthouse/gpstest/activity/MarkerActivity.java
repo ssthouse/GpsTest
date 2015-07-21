@@ -28,10 +28,9 @@ import com.baidu.mapapi.map.UiSettings;
 import com.baidu.mapapi.model.LatLng;
 import com.ssthouse.gpstest.Constant;
 import com.ssthouse.gpstest.R;
-import com.ssthouse.gpstest.model.DBHelper;
 import com.ssthouse.gpstest.model.MarkerItem;
 import com.ssthouse.gpstest.util.AnimHelper;
-import com.ssthouse.gpstest.util.LogHelper;
+import com.ssthouse.gpstest.util.gps.DBHelper;
 import com.ssthouse.gpstest.util.gps.LocateHelper;
 import com.ssthouse.gpstest.util.gps.MapHelper;
 import com.ssthouse.gpstest.util.gps.MarkerHelper;
@@ -44,6 +43,9 @@ import com.ssthouse.gpstest.util.gps.MarkerHelper;
  */
 public class MarkerActivity extends AppCompatActivity {
     private static final String TAG = "MarkerActivity";
+
+    //用于判断当前Activity---被开启的状态
+    private int requestCode;
 
     //开启本Activity需要的数据
     private MarkerItem markerItem;
@@ -89,7 +91,7 @@ public class MarkerActivity extends AppCompatActivity {
     public static void start(Activity activity, MarkerItem markerItem, int requestCode) {
         Intent intent = new Intent(activity, MarkerActivity.class);
         intent.putExtra(Constant.EXTRA_KEY_MARKER_ITEM, markerItem);
-        //TODO---开启这个标记Activity需要回调---1标记成功则添加数据刷新界面---2失败就不干什么
+        intent.putExtra(Constant.EXTRA_KEY_REQUEST_CODE, requestCode);
         activity.startActivityForResult(intent, requestCode);
     }
 
@@ -102,6 +104,9 @@ public class MarkerActivity extends AppCompatActivity {
         MarkerItem wrongItem = (MarkerItem) getIntent()
                 .getSerializableExtra(Constant.EXTRA_KEY_MARKER_ITEM);
         markerItem = DBHelper.getMarkerItemInDB(wrongItem);
+
+        requestCode = getIntent().getIntExtra(Constant.EXTRA_KEY_REQUEST_CODE,
+                PrjEditActivity.REQUEST_CODE_MARKER_ACTIVITY);
 
         // 定位初始化
         mLocClient = new LocationClient(this);
@@ -128,11 +133,7 @@ public class MarkerActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         mMapView = (MapView) findViewById(R.id.id_map_view);
-        //如果是编辑---定位到编辑的点
-        if (markerItem.getLatitude() != 0 && markerItem.getLongitude() != 0) {
-            MapHelper.animatToPoint(mBaiduMap,
-                    new LatLng(markerItem.getLatitude(), markerItem.getLongitude()));
-        }
+
         mBaiduMap = mMapView.getMap();
         UiSettings uiSettings = mBaiduMap.getUiSettings();
         //开启指南针
@@ -141,6 +142,12 @@ public class MarkerActivity extends AppCompatActivity {
         mBaiduMap.setMyLocationEnabled(true);
         mBaiduMap.setMyLocationConfigeration(new MyLocationConfiguration(
                 MyLocationConfiguration.LocationMode.NORMAL, true, null));
+
+        //如果是编辑---定位到编辑的点
+        if (markerItem.getLatitude() != 0 && markerItem.getLongitude() != 0) {
+            MapHelper.animateToPoint(mBaiduMap,
+                    new LatLng(markerItem.getLatitude(), markerItem.getLongitude()));
+        }
 
         //地图的触摸监听事件
         mBaiduMap.setOnMapTouchListener(new BaiduMap.OnMapTouchListener() {
@@ -212,12 +219,12 @@ public class MarkerActivity extends AppCompatActivity {
                 if (isLocated) {
                     //如果已经定位了---切换视图
                     if (mCurrentMode == MyLocationConfiguration.LocationMode.NORMAL) {
-                        LogHelper.Log(TAG, "change to compass mode");
+                       // LogHelper.Log(TAG, "change to compass mode");
                         mCurrentMode = MyLocationConfiguration.LocationMode.COMPASS;
                         ibMode.setImageResource(R.drawable.location_mode_2);
                         enableEagle();
                     } else if (mCurrentMode == MyLocationConfiguration.LocationMode.COMPASS) {
-                        LogHelper.Log(TAG, "change to normal mode");
+                       // LogHelper.Log(TAG, "change to normal mode");
                         mCurrentMode = MyLocationConfiguration.LocationMode.NORMAL;
                         ibMode.setImageResource(R.drawable.location_mode_1);
                         disableEagle();
@@ -226,7 +233,7 @@ public class MarkerActivity extends AppCompatActivity {
                     //手动定位
                     locate(mLocClient.getLastKnownLocation());
 //                    uiSettings.setCompassEnabled(true);
-                    LogHelper.Log(TAG, "located!!!");
+                   // LogHelper.Log(TAG, "located!!!");
                     isLocated = true;
                     //判断当前状态---切换图标
                     if (mCurrentMode == MyLocationConfiguration.LocationMode.NORMAL) {
@@ -256,7 +263,7 @@ public class MarkerActivity extends AppCompatActivity {
         //更新地图中心点
         LatLng ll = new LatLng(location.getLatitude(),
                 location.getLongitude());
-        MapHelper.animatToPoint(mBaiduMap, ll);
+        MapHelper.animateToPoint(mBaiduMap, ll);
     }
 
     private void enableEagle() {
@@ -287,6 +294,9 @@ public class MarkerActivity extends AppCompatActivity {
             case R.id.id_action_load_marker:
                 break;
             case android.R.id.home:
+                if(requestCode == PrjEditActivity.REQUEST_CODE_MARKER_EDIT_ACTIVITY){
+                    return true;
+                }
                 markerItem.delete();
                 setResult(Constant.RESULT_CODE_OK);
                 finish();
@@ -296,6 +306,9 @@ public class MarkerActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        if(requestCode == PrjEditActivity.REQUEST_CODE_MARKER_EDIT_ACTIVITY){
+            return;
+        }
         //如果直接想返回---需要删除提前在数据库中保存的数据
         markerItem.delete();
         setResult(Constant.RESULT_CODE_OK);

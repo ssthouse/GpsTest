@@ -84,6 +84,8 @@
         <activity android:name=".activity.RoutePlanActivity" />
 
         <activity android:name=".activity.MeasureActivity"/>
+
+        <activity android:name=".activity.PicGridActivity"/>
     </application>
 
 </manifest>

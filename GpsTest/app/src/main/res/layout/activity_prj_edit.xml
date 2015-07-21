@@ -9,7 +9,7 @@
     <android.support.v7.widget.Toolbar
         android:id="@+id/id_tb"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"/>
+        android:layout_height="?attr/actionBarSize" />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -22,10 +22,10 @@
             android:clickable="true" />
 
         <LinearLayout
-            android:layout_margin="4dp"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:layout_gravity="top"
+            android:layout_margin="4dp"
             android:orientation="horizontal">
 
             <Button
@@ -50,7 +50,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/selector_gray_button"
-                android:text="拍照" />
+                android:text="照片" />
         </LinearLayout>
 
         <ImageButton
@@ -59,8 +59,16 @@
             android:layout_height="36dp"
             android:layout_gravity="bottom|left"
             android:layout_margin="8dp"
-            android:background="@color/gray"
+            android:background="@color/white"
             android:src="@drawable/locate2" />
+
+        <com.ssthouse.gpstest.model.widget.ZoomControlView
+            android:id="@+id/id_zoom_control"
+            android:layout_marginBottom="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_gravity="bottom|right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
     </FrameLayout>
 
 </LinearLayout>

@@ -11,7 +11,7 @@ import com.gitonway.lee.niftymodaldialogeffects.lib.NiftyDialogBuilder;
 import com.ssthouse.gpstest.R;
 import com.ssthouse.gpstest.activity.PrjEditActivity;
 import com.ssthouse.gpstest.adapter.PrjLvAdapter;
-import com.ssthouse.gpstest.model.DBHelper;
+import com.ssthouse.gpstest.util.gps.DBHelper;
 import com.ssthouse.gpstest.model.PrjItem;
 
 /**
@@ -89,7 +89,7 @@ public class DialogHelper {
         //build出dialog
         final NiftyDialogBuilder dialogBuilder = NiftyDialogBuilder.getInstance(context);
         //inflate出View---配置点击事件
-        LinearLayout ll = (LinearLayout) LayoutInflater.from(context).inflate(R.layout.menu_lv_item, null);
+        LinearLayout ll = (LinearLayout) LayoutInflater.from(context).inflate(R.layout.dialog_lv_item, null);
         ll.findViewById(R.id.id_menu_delete).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

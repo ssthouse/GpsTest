@@ -55,8 +55,16 @@
             android:layout_height="36dp"
             android:layout_gravity="bottom|left"
             android:layout_margin="8dp"
-            android:background="@color/gray"
+            android:background="@color/white"
             android:src="@drawable/location_mode_1" />
+
+        <com.ssthouse.gpstest.model.widget.ZoomControlView
+            android:id="@+id/id_zoom_control"
+            android:layout_marginBottom="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_gravity="bottom|right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
 
     </FrameLayout>
 </LinearLayout>

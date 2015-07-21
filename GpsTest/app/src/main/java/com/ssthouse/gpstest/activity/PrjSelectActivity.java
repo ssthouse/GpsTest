@@ -13,10 +13,9 @@ import android.widget.ListView;
 import com.github.clans.fab.FloatingActionButton;
 import com.ssthouse.gpstest.R;
 import com.ssthouse.gpstest.adapter.PrjLvAdapter;
-import com.ssthouse.gpstest.model.DBHelper;
-import com.ssthouse.gpstest.model.PrjItem;
 import com.ssthouse.gpstest.util.DialogHelper;
 import com.ssthouse.gpstest.util.ToastHelper;
+import com.ssthouse.gpstest.util.gps.DBHelper;
 
 /**
  * 主界面选择工程的Activity
@@ -38,7 +37,8 @@ public class PrjSelectActivity extends AppCompatActivity{
 
         //TODO---测试代码
 //        MarkerActivity.start(this);
-        MeasureActivity.start(this, new PrjItem());
+//        MeasureActivity.start(this, new PrjItem());
+        PicGridActivity.start(this, null);
     }
 
     private void initView(){

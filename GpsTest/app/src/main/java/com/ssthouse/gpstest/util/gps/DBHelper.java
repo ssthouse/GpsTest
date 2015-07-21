@@ -1,6 +1,8 @@
-package com.ssthouse.gpstest.model;
+package com.ssthouse.gpstest.util.gps;
 
 import com.activeandroid.query.Select;
+import com.ssthouse.gpstest.model.MarkerItem;
+import com.ssthouse.gpstest.model.PrjItem;
 
 import java.util.List;
 
@@ -9,6 +11,22 @@ import java.util.List;
  * Created by ssthouse on 2015/7/17.
  */
 public class DBHelper {
+
+    /**
+     * 判断prjItem是不是空的
+     * @param prjItem
+     * @return
+     */
+    public static boolean isPrjEmpty(PrjItem prjItem) {
+        List<MarkerItem> markerList = new Select()
+                .from(MarkerItem.class)
+                .where("prjName = " + "'" + prjItem.getPrjName() + "'")
+                .execute();
+        if (markerList == null || markerList.size() == 0) {
+            return true;
+        }
+        return false;
+    }
 
     /**
      * 从数据库中获取MarkerItem
@@ -58,5 +76,16 @@ public class DBHelper {
                 .orderBy("Id ASC")
                 .execute();
         return prjItemList;
+    }
+
+    /**
+     * 获取一个PrjItem所有的Marker点
+     * @param prjItem
+     * @return
+     */
+    public static List<MarkerItem> getMarkerList(PrjItem prjItem){
+        return new Select().from(MarkerItem.class)
+                .where("prjName = "+"'"+prjItem.getPrjName()+"'")
+                .execute();
     }
 }
