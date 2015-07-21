@@ -15,7 +15,7 @@ import java.util.List;
  * Created by ssthouse on 2015/7/17.
  */
 @Table(name = Constant.TABLE_MARKER_ITEM)
-public class MarkerItem extends Model implements Serializable{
+public class MarkerItem extends Model implements Serializable {
 
     @Column(name = "prjName")
     private String prjName;
@@ -41,9 +41,10 @@ public class MarkerItem extends Model implements Serializable{
 
     /**
      * 使用prjItem的构造方法
+     *
      * @param prjItem
      */
-    public MarkerItem(PrjItem prjItem){
+    public MarkerItem(PrjItem prjItem) {
         super();
         this.prjName = prjItem.getPrjName();
         this.latitude = 0;
@@ -76,6 +77,10 @@ public class MarkerItem extends Model implements Serializable{
                         "'" + prjName + "'")
                 .execute();
         return photoItemList;
+    }
+
+    public String getFilePath() {
+        return Constant.PICTURE_PATH + prjName + latitude + "_" + longitude + "/";
     }
 
     //getter-----and------setter--------------------------

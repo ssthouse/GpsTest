@@ -27,6 +27,13 @@ import java.util.List;
  */
 public class PictureHelper {
 
+    public static void deletePicture(String path){
+        File file = new File(path);
+        if(file.exists()){
+            file.delete();
+        }
+    }
+
     /**
      * 显示当前图库的所有图片---按文件名顺序
      * @param context

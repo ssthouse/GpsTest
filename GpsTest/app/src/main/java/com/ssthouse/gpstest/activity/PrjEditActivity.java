@@ -228,7 +228,6 @@ public class PrjEditActivity extends AppCompatActivity {
         findViewById(R.id.id_btn_take_photo).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //TODO
                 if (currentMarker == null) {
                     ToastHelper.show(PrjEditActivity.this, "请先选择一个基址点");
                 } else {

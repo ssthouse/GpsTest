@@ -9,6 +9,8 @@ public class Constant {
     //app的文件夹名
     public static  final String APP_FOLDER_NAME = "FpsTest";
 
+    public static final String PICTURE_PATH = "/storage/sdcard0/GpaTest/Picture/";
+
     //table名
     public static final String TABLE_PRJ_ITEM = "Projects";
     public static final String TABLE_MARKER_ITEM = "Markers";

@@ -38,7 +38,7 @@ public class PrjSelectActivity extends AppCompatActivity{
         //TODO---测试代码
 //        MarkerActivity.start(this);
 //        MeasureActivity.start(this, new PrjItem());
-        PicGridActivity.start(this, null);
+//        PicGridActivity.start(this, null);
     }
 
     private void initView(){
